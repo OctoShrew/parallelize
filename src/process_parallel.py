@@ -1,4 +1,5 @@
 from ast import arguments
+from typing import Iterable
 import numpy as np
 import queue
 from threading import Thread, Lock
@@ -64,6 +65,11 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
     Returns:
         tuple[list[list], list]: _description_
     """
+
+    assert isinstance(func, callable), "Func must be a function"
+    assert isinstance(arguments, list), "Arguments must be a list"
+    for argument in arguments:
+        assert isinstance(argument, list), "Each passed set of arguments should be a list"
 
     indices = list(
         np.arange(len(arguments))
@@ -187,6 +193,7 @@ def process_first(func: callable, arguments: list[list | dict], retries: int = 5
         time.sleep(0.01) # on some systems (e.g. Mac M1 Pro chips) if no time.sleep is included the while loop slows down
         # the threaded function calls significantly. No idea why but oh well...
         pass
+    # TODO: Kill the different threads
     return [res[-1][1]], [res[-1][2]]
 
 
