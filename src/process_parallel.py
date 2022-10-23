@@ -100,7 +100,6 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
 
     results = flatten(results)
     sorted_results = sorted(results, key=lambda tup: tup[0])
-    print(sorted_results)
     
     return [i[1] for i in sorted_results], [i[2] for i in sorted_results]
 
@@ -293,6 +292,5 @@ def process_parallel_multifunc(funcs: callable, arguments: list[list], timeout: 
 
     results = flatten(results)
     sorted_results = sorted(results, key=lambda tup: tup[0])
-    print(sorted_results)
     
     return [i[1] for i in sorted_results], [i[2] for i in sorted_results]
