@@ -1,5 +1,5 @@
 from ast import arguments
-from typing import Iterable
+from typing import Callable, Iterable
 import numpy as np
 import queue
 from threading import Thread, Lock
@@ -66,7 +66,7 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
         tuple[list[list], list]: _description_
     """
 
-    assert isinstance(func, callable), "Func must be a function"
+    assert isinstance(func, Callable), "Func must be a function"
     assert isinstance(arguments, list), "Arguments must be a list"
     for argument in arguments:
         assert isinstance(argument, list), "Each passed set of arguments should be a list"

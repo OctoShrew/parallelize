@@ -20,7 +20,26 @@ class TestParallel(unittest.TestCase):
 
         args = [[1,2], [3,4], [5,6], [7,8]]
         results = process_parallel(func, args, timeout = 5)
-        # assert results[1] == [func(*arg) for arg in args]
+        assert results[1] == [] # ensure results are empty
+        
+    def test_parallel_wrong_func(self):
+        func = "A"
+
+        args = [[1,2], [3,4], [5,6], [7,8]]
+        try:
+            results = process_parallel(func, args, timeout = 5)
+        except Exception as e:
+            isinstance(e, AssertionError) # check that the error gets caught in assertion
+            
+    def test_parallel_wrong_args(self):
+        func = lambda x,y: x*y
+
+        args = [[1,2], 3,4, 5,6, [7,8]]
+        try:
+            results = process_parallel(func, args, timeout = 5)
+        except Exception as e:
+            isinstance(e, AssertionError) # check that the error gets caught in assertion                       
+        
 
 class TestFirst(unittest.TestCase):
     def test_first(self):
