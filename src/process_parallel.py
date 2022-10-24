@@ -32,8 +32,9 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
             else:
                 try:
                     result = func_timeout(timeout, func, argument)
-                except:
-                    raise Exception(f"The function call for args {argument} has time out.")
+                except Exception as e:
+                    print(f"The function call for args {argument} has exited with error {e}")
+                    raise e
             if verbose:
                 print(f"Function call {idx} successful with result {result}")
         except Exception as e: # notify user that call has failed
@@ -122,8 +123,9 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
             else:
                 try:
                     result = func_timeout(timeout, func, args = argument)
-                except:
-                    raise Exception(f"The function call for args {argument} has time out.")
+                except Exception as e:
+                    print(f"The function call for args {argument} has exited with error {e}")
+                    raise e
             if verbose:
                 print(f"Function call {idx} successful.")
         except Exception as e:
@@ -200,7 +202,8 @@ def process_first(func: callable, arguments: list[list | dict], retries: int = 5
 def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None, retries: int) -> list | None:
     results: list = []
     iden = np.random.randint(1000)
-    # print(f"Thread {iden} started")
+    result = None # Added this to avoid result being possibly unset
+    
     # as long as we have function calls remaining
     while len(idx_args_funcs) > 0:
         with lock:
@@ -211,8 +214,10 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
             else:
                 try:
                     result = func_timeout(timeout, func, argument)
-                except:
-                    raise Exception(f"The function call for args {argument} has time out.")
+                except Exception as e:
+                    print(f"The function call for args {argument} has exited with error {e}")
+                    raise e
+                    # raise Exception(f"The function call for args {argument} has timed out.")
             if verbose:
                 print(f"Function call {idx} successful with result {result}")
         except Exception as e: # notify user that call has failed
