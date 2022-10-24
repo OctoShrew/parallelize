@@ -246,7 +246,7 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
         return results
 
 
-def process_parallel_multifunc(funcs: callable, arguments: list[list], timeout: float | None = None, 
+def process_parallel_multifunc(funcs: list[callable], arguments: list[list], timeout: float | None = None, 
                      retries: int = 1, n_threads: int = 5, verbose=False) -> tuple[list[list], list]:
     """ This function created multiple (n_thread) threads and processes them in parallel. It
     takes in a list of functions & a list of arguments and distributes the function calls (with the respective
