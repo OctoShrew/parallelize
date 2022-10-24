@@ -1,9 +1,10 @@
-from ast import arguments
-from typing import Callable, Iterable
-import numpy as np
 import queue
-from threading import Thread, Lock
 import time
+from ast import arguments
+from threading import Lock, Thread
+from typing import Callable, Iterable
+
+import numpy as np
 from func_timeout import func_timeout
 
 lock = Lock()
@@ -12,13 +13,13 @@ lock = Lock()
 def flatten(t):
     """Flatten a list of lists, e.g. [[a,b],[c]] --> [a,b,c] """
     return [
-        item for sublist in t if sublist != None for item in sublist
-        if item != None
+        item for sublist in t if sublist is not None for item in sublist
+        if item is not None
     ]
 
 
 def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, retries: int) -> list | None:
-    results: list = []
+    results = []
     iden = np.random.randint(1000)
     # print(f"Thread {iden} started")
     # as long as we have function calls remaining
@@ -35,9 +36,9 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
                     raise Exception(f"The function call for args {argument} has time out.")
             if verbose:
                 print(f"Function call {idx} successful with result {result}")
-        except: # notify user that call has failed
+        except Exception as e: # notify user that call has failed
             result = None 
-            print(f"Function call {idx} has failed")
+            print(f"Function call {idx} has failed with error {e}")
             pass
         
         
@@ -91,7 +92,6 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
     while len(idx_args) > 1:
         time.sleep(0.001) # on some systems (e.g. Mac M1 Pro chips) if no time.sleep is included the while loop slows down
         # the threaded function calls significantly. No idea why but oh well...
-        pass
 
     for thread in threads_list:
         thread.join()
@@ -109,9 +109,6 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
     
     return [i[1] for i in sorted_results], [i[2] for i in sorted_results]
 
-from unittest import result
-from func_timeout import func_timeout
-
 
 def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool, timeout: float | None):
     global res
@@ -126,13 +123,13 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
                 try:
                     result = func_timeout(timeout, func, args = argument)
                 except:
-                    raise Exception(f"The function call for args {args} has time out.")
+                    raise Exception(f"The function call for args {argument} has time out.")
             if verbose:
                 print(f"Function call {idx} successful.")
-        except:
+        except Exception as e:
             # print(f"Exception: {e}")
             result = None
-            print(f"Function call {idx} has failed")
+            print(f"Function call {idx} has failed with exception {e}")
             pass
 
         # if result is not None:
@@ -143,7 +140,7 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
         return results
 
 def process_first(func: callable, arguments: list[list | dict], retries: int = 5, 
-                  n_threads: int = 5, verbose: bool = False, timeout: float = None):
+                  n_threads: int = 5, verbose: bool = False, timeout: float|None = None):
     """This function creates numtiple (n_thread) threads and waits for the first one that
     returns a result, then returns said result. Currently the other threads will still continue 
     running & complete. 
@@ -192,27 +189,12 @@ def process_first(func: callable, arguments: list[list | dict], retries: int = 5
                 break
         time.sleep(0.01) # on some systems (e.g. Mac M1 Pro chips) if no time.sleep is included the while loop slows down
         # the threaded function calls significantly. No idea why but oh well...
-        pass
     # TODO: Kill the different threads
     return [res[-1][1]], [res[-1][2]]
 
 
-from ast import arguments
-import numpy as np
-import queue
-from threading import Thread, Lock
-import time
-from func_timeout import func_timeout
-
-lock = Lock()
 
 
-def flatten(t):
-    """Flatten a list of lists, e.g. [[a,b],[c]] --> [a,b,c] """
-    return [
-        item for sublist in t if sublist != None for item in sublist
-        if item != None
-    ]
 
 
 def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None, retries: int) -> list | None:
@@ -233,10 +215,9 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
                     raise Exception(f"The function call for args {argument} has time out.")
             if verbose:
                 print(f"Function call {idx} successful with result {result}")
-        except: # notify user that call has failed
+        except Exception as e: # notify user that call has failed
             result = None 
-            print(f"Function call {idx} has failed")
-            pass
+            print(f"Function call {idx} has failed with Exception {e}")
         
         
         if result is not None:
@@ -284,7 +265,6 @@ def process_parallel_multifunc(funcs: list[callable], arguments: list[list], tim
     while len(idx_args_funcs) > 1:
         time.sleep(0.001) # on some systems (e.g. Mac M1 Pro chips) if no time.sleep is included the while loop slows down
         # the threaded function calls significantly. No idea why but oh well...
-        pass
 
     for thread in threads_list:
         thread.join()
