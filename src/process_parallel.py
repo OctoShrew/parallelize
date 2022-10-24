@@ -141,7 +141,7 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
         # print("Returning results")
         return results
 
-def process_first(func: callable, arguments: list[list | dict], retries: int = 5, 
+def process_first(func: callable, arguments: list[list] | list[dict], retries: int = 5, 
                   n_threads: int = 5, verbose: bool = False, timeout: float|None = None):
     """This function creates numtiple (n_thread) threads and waits for the first one that
     returns a result, then returns said result. Currently the other threads will still continue 
