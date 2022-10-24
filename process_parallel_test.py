@@ -38,8 +38,23 @@ class TestParallel(unittest.TestCase):
         try:
             results = process_parallel(func, args, timeout = 5)
         except Exception as e:
-            isinstance(e, AssertionError) # check that the error gets caught in assertion                       
-        
+            isinstance(e, AssertionError) # check that the error gets caught in assertion   
+class testProcessParallelMultifunc(unittest.TestCase):
+    def test_process_parallel_multifunc(self):
+        func1 = lambda x,y: x*y
+        func2 = lambda x,y: x/y
+        funcs = [func1,func2]
+        args = [[1,2], [3,4]]
+        results = process_parallel_multifunc(funcs, args)
+        assert results[1] == [func(*arg) for arg, func in zip(args, funcs)]
+    def test_process_parallel_multifunc_timeout(self):
+        func1 = lambda x,y: x*y
+        func2 = lambda x,y: x/y
+        funcs = [func1,func2]
+        args = [[1,2], [3,4]]
+        results = process_parallel_multifunc(funcs, args, timeout=5)
+        assert results[1] == [func(*arg) for arg, func in zip(args, funcs)]
+                
 
 class TestFirst(unittest.TestCase):
     def test_first(self):
