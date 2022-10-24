@@ -54,9 +54,35 @@ class testProcessParallelMultifunc(unittest.TestCase):
         args = [[1,2], [3,4]]
         results = process_parallel_multifunc(funcs, args, timeout=5)
         assert results[1] == [func(*arg) for arg, func in zip(args, funcs)]
-                
+        
+    def test_process_parallel_multifunc_one_wrong_func(self):
+        func1 = 4
+        func2 = lambda x,y: x/y
+        funcs = [func1,func2]
+        args = [[1,2], [3,4]]
+        try:
+            process_parallel_multifunc(funcs, args, timeout=5)
+        except Exception as e:
+            isinstance(e, AssertionError) # check that the error gets caught in assertion
 
-class TestFirst(unittest.TestCase):
+    def test_process_parallel_multifunc_multiple_wrong_func(self):
+        func1 = lambda x,y: x*y
+        func2 = lambda x,y: x/y
+        funcs = [func1,func2]
+        args = [[1,2,2], [3,4]]
+        try:
+            process_parallel_multifunc(funcs, args, timeout=5)
+        except Exception as e:
+            isinstance(e, AssertionError) # check that the error gets caught in assertion
+    def test_process_parallel_multifunc_wrong_args(self):
+        func1 = 4
+        func2 = "skmc"
+        funcs = [func1,func2]
+        args = [[1,2], [3,4]]
+        try:
+            process_parallel_multifunc(funcs, args, timeout=5)
+        except Exception as e:
+            isinstance(e, AssertionError) # check that the error gets caught in assertionclass TestFirst(unittest.TestCase):
     def test_first(self):
         func = lambda x,y: x*y
         args = [[1,2], [3,4], [5,6], [7,8]]
