@@ -83,6 +83,7 @@ class testProcessParallelMultifunc(unittest.TestCase):
             process_parallel_multifunc(funcs, args, timeout=5)
         except Exception as e:
             isinstance(e, AssertionError) # check that the error gets caught in assertionclass TestFirst(unittest.TestCase):
+class TestFirst(unittest.TestCase):
     def test_first(self):
         func = lambda x,y: x*y
         args = [[1,2], [3,4], [5,6], [7,8]]
@@ -94,7 +95,14 @@ class testProcessParallelMultifunc(unittest.TestCase):
         args = [[1,2], [3,4], [5,6], [7,8]]
         results = process_first(func, args, timeout = 5)
         assert results[1][0] in [func(*arg) for arg in args]
+        
+    def test_first_wrong_func(self):
+        func = None
+        args = [[1,2], [3,4], [5,6], [7,8]]
+        try:
+            process_first(func, args, timeout = 5)
+        except Exception as e:
+            isinstance(e, AssertionError) # check that the error gets caught in assertionclass TestFirst(unittest.TestCase):
 
-    
 if __name__ == "__main__":
     unittest.main()
