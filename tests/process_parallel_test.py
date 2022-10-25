@@ -1,5 +1,9 @@
 import unittest
-from src.process_parallel import *
+import sys, os.path
+src_fldr = (os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
++ '/src/')
+sys.path.append(src_fldr)
+from process_parallel import *
 
 class TestParallel(unittest.TestCase):
     def test_parallel(self):
@@ -77,6 +81,8 @@ class testProcessParallelMultifunc(unittest.TestCase):
             process_parallel_multifunc(funcs, args, timeout=5)
         except Exception as e:
             isinstance(e, AssertionError) # check that the error gets caught in assertion
+            
+            
     def test_process_parallel_multifunc_wrong_args(self):
         func1 = 4
         func2 = "skmc"
