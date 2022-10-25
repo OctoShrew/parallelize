@@ -12,25 +12,29 @@ class Parallelizer:
     functions: Optional[list[tuple[Callable, list[list]]]] = []
     
     
-    def add_function(self, func: Callable, arguments: list[list]) -> list[list]:
-        self.functions.append((func, arguments))
+    def add_function(self, func: Callable, arguments: list[list] | list[None] | None = None, 
+                     kwargs: list[dict] | list[None] | None = None) -> list[list]:
+        
+        self.functions.append((func, arguments, kwargs))
         
     def run(self, n_threads = 5, verbose = False):
         all_funcs = []
         all_args = []
+        all_kwargs = []
         
         # bring everything into correct format for multifunc processing
-        for func, args in self.functions:
+        for func, args, kwarg in self.functions:
             for arg in args:
                 all_funcs.append(func)
                 all_args.append(arg)
-        
-        res = process_parallel_multifunc(all_funcs, all_args, n_threads = n_threads, verbose=verbose)
+                all_kwargs.append(kwarg)
+                
+        res = process_parallel_multifunc(all_funcs, all_args, all_kwargs, n_threads = n_threads, verbose=verbose)
         
         
         results = {}
         i = 0
-        for func, args in self.functions:
+        for func, args, kwargs in self.functions:
             results[func.__name__] = []
             for arg in args:
                 results[func.__name__].append(res[i])

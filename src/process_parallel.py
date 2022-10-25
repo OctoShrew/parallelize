@@ -1,3 +1,4 @@
+from ast import Call
 import queue
 import time
 from threading import Lock, Thread
@@ -29,13 +30,20 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
         try:
             if timeout is None:
                 if kwarg is not None:
-                    result = func(*argument, **kwarg)
+                    if argument is not None:
+                        result = func(*argument, **kwarg)
+                    else:
+                        result = func(**kwarg)
                 else:
                     result = func(*argument)
+                    
             else:
                 try:
                     if kwarg is not None:
-                        result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                        if argument is not None:
+                            result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                        else:
+                            result = func_timeout(timeout, func, kwargs=kwarg)
                     else:
                         result = func_timeout(timeout, func, args = argument)
                 except Exception as e:
@@ -55,7 +63,7 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
         return results
 
 
-def process_parallel(func: callable, args: list[list], kwargs: list[dict] | list[None] | None = None, 
+def process_parallel(func: callable, args: list[list] | list[None] | None = None, kwargs: list[dict] | list[None] | None = None, 
                      timeout: float | None = None, retries: int = 1, n_threads: int = 5, 
                      verbose=False) -> tuple[list[list], list]:
     """ This function created multiple (n_thread) threads and processes them in parallel. It
@@ -75,9 +83,15 @@ def process_parallel(func: callable, args: list[list], kwargs: list[dict] | list
     """
    
     assert isinstance(func, Callable), "Func must be a function"
-    assert isinstance(args, list), "args must be a list"
-    for argument in args:
-        assert isinstance(argument, list), "Each passed set of args should be a list"
+    assert not isinstance(kwargs, NoneType) or not isinstance(args, NoneType), "At least args or kwargs need to be passed and cannot be None"
+    
+    if args is not None:
+        assert isinstance(args, list), "args must be a list"
+        for argument in args:
+            assert isinstance(argument, list), "Each passed set of args should be a list"
+    else:
+        args = [None] * len(kwargs)
+        
     if kwargs is not None:
         for kwarg in kwargs:
             assert isinstance(kwarg, Dict)
@@ -132,13 +146,19 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
         try:
             if timeout is None:
                 if kwarg is not None:
-                    result = func(*argument, **kwarg)
+                    if argument is not None:
+                        result = func(*argument, **kwarg)
+                    else:
+                        result = func(**kwarg)
                 else:
                     result = func(*argument)
             else:
                 try:
                     if kwarg is not None:
-                        result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                        if argument is not None:
+                            result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                        else:
+                            result = func_timeout(timeout, func, kwargs=kwarg)
                     else:
                         result = func_timeout(timeout, func, args = argument)
                 except Exception as e:
@@ -160,7 +180,8 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
         # print("Returning results")
         return results
 
-def process_first(func: callable, args: list[list], kwargs: list[dict] | list[None] | None = None, retries: int = 5, 
+def process_first(func: callable, args: list[list] | None = None, 
+                  kwargs: list[dict] | None = None, retries: int = 5, 
                   n_threads: int = 5, verbose: bool = False, timeout: float|None = None):
     """This function creates numtiple (n_thread) threads and waits for the first one that
     returns a result, then returns said result. Currently the other threads will still continue 
@@ -179,6 +200,18 @@ def process_first(func: callable, args: list[list], kwargs: list[dict] | list[No
     Returns:
         _type_: _description_
     """    
+
+    assert isinstance(func, Callable), "Func must be a function"
+    assert not isinstance(kwargs, NoneType) or not isinstance(args, NoneType), "At least args or kwargs need to be passed and cannot be None"
+    
+    if args is not None:
+        assert isinstance(args, list), "args must be a list"
+        for argument in args:
+            assert isinstance(argument, list), "Each passed set of args should be a list"
+    else:
+        args = [None] * len(kwargs)
+        
+    
     if kwargs == None:
         kwargs = [None] * len(args)
 
@@ -234,13 +267,19 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
         try:
             if timeout is None:
                 if kwarg is not None:
-                    result = func(*argument, **kwarg)
+                    if argument is not None:
+                        result = func(*argument, **kwarg)
+                    else:
+                        result = func(**kwarg)
                 else:
                     result = func(*argument)
             else:
                 try:
                     if kwarg is not None:
-                        result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                        if argument is not None:
+                            result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                        else:
+                            result = func_timeout(timeout, func, kwargs=kwarg)
                     else:
                         result = func_timeout(timeout, func, args = argument)
                 except Exception as e:
@@ -279,7 +318,20 @@ def process_parallel_multifunc(funcs: list[callable], args: list[list], kwargs: 
     Returns:
         tuple[list[list], list]: _description_
     """
-    if kwargs == None:
+    assert isinstance(funcs, list), "Funcs must be a list of functions"
+    for func in funcs:
+        assert isinstance(func, Callable), "Funcs must be a list of functions"
+    
+    assert not isinstance(kwargs, NoneType) or not isinstance(args, NoneType), "At least args or kwargs need to be passed and cannot be None"
+    
+    if args is not None:
+        assert isinstance(args, list), "args must be a list"
+        for argument in args:
+            assert isinstance(argument, list), "Each passed set of args should be a list"
+    else:
+        args = [None] * len(kwargs)
+        
+    if kwargs is None:
         kwargs = [None] * len(args)
 
     indices = list(
