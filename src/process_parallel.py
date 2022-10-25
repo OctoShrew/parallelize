@@ -40,11 +40,10 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
         except Exception as e: # notify user that call has failed
             result = None 
             print(f"Function call {idx} has failed with error {e}")
-            pass
         
         
-        if result is not None:
-            results.append((idx, argument, result))
+        # if result is not None:
+        results.append((idx, result))
 
     if len(results) >= 1: # return results if there are any
         return results
@@ -108,7 +107,7 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
     results = flatten(results)
     sorted_results = sorted(results, key=lambda tup: tup[0])
     
-    return [i[1] for i in sorted_results], [i[2] for i in sorted_results]
+    return [i[1] for i in sorted_results]
 
 
 def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool, timeout: float | None):
@@ -137,6 +136,7 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
         # if result is not None:
         results.append((idx, argument, result))
         res.append((idx, argument, result))
+    
     if len(results) >= 1:
         # print("Returning results")
         return results
@@ -192,7 +192,7 @@ def process_first(func: callable, arguments: list[list] | list[dict], retries: i
         time.sleep(0.01) # on some systems (e.g. Mac M1 Pro chips) if no time.sleep is included the while loop slows down
         # the threaded function calls significantly. No idea why but oh well...
     # TODO: Kill the different threads
-    return [res[-1][1]], [res[-1][2]]
+    return res[-1][2]
 
 
 
@@ -226,7 +226,7 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
         
         
         if result is not None:
-            results.append((idx, argument, result))
+            results.append((idx, result))
 
     if len(results) >= 1: # return results if there are any
         return results
@@ -285,4 +285,4 @@ def process_parallel_multifunc(funcs: list[callable], arguments: list[list], tim
     results = flatten(results)
     sorted_results = sorted(results, key=lambda tup: tup[0])
     
-    return [i[1] for i in sorted_results], [i[2] for i in sorted_results]
+    return [i[1] for i in sorted_results]

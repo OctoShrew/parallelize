@@ -47,6 +47,7 @@ class testProcessParallelMultifunc(unittest.TestCase):
         args = [[1,2], [3,4]]
         results = process_parallel_multifunc(funcs, args)
         assert results[1] == [func(*arg) for arg, func in zip(args, funcs)]
+        
     def test_process_parallel_multifunc_timeout(self):
         func1 = lambda x,y: x*y
         func2 = lambda x,y: x/y
