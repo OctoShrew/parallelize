@@ -1,8 +1,8 @@
 import queue
 import time
-from ast import arguments
 from threading import Lock, Thread
-from typing import Callable, Iterable
+from types import NoneType
+from typing import Callable, Dict, Iterable
 
 import numpy as np
 from func_timeout import func_timeout
@@ -25,13 +25,19 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
     # as long as we have function calls remaining
     while len(idx_args) > 0:
         with lock:
-            idx, argument = idx_args.pop(-1)
+            idx, argument, kwarg = idx_args.pop(-1)
         try:
             if timeout is None:
-                result = func(*argument) # get result of function call)
+                if kwarg is not None:
+                    result = func(*argument, **kwarg)
+                else:
+                    result = func(*argument)
             else:
                 try:
-                    result = func_timeout(timeout, func, argument)
+                    if kwarg is not None:
+                        result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                    else:
+                        result = func_timeout(timeout, func, args = argument)
                 except Exception as e:
                     print(f"The function call for args {argument} has exited with error {e}")
                     raise e
@@ -49,16 +55,17 @@ def _process_function(func, idx_args: list, verbose: bool, timeout: int | None, 
         return results
 
 
-def process_parallel(func: callable, arguments: list[list], timeout: float | None = None, 
-                     retries: int = 1, n_threads: int = 5, verbose=False) -> tuple[list[list], list]:
+def process_parallel(func: callable, args: list[list], kwargs: list[dict] | list[None] | None = None, 
+                     timeout: float | None = None, retries: int = 1, n_threads: int = 5, 
+                     verbose=False) -> tuple[list[list], list]:
     """ This function created multiple (n_thread) threads and processes them in parallel. It
-    takes in a function & a list of arguments and distributes the function calls (with the respective
-    arguments) across those threads. Especially useful when dealing with e.g. scraping where you might 
+    takes in a function & a list of args and distributes the function calls (with the respective
+    args) across those threads. Especially useful when dealing with e.g. scraping where you might 
     have a limit on the number of threads that can be run in parallel.
 
     Args:
         func (callable): function that is used for processing
-        arguments (list[list]): list of arguments that should be passed to the function ([[arg1, arg2], [arg1, arg2], ...])
+        args (list[list]): list of args that should be passed to the function ([[arg1, arg2], [arg1, arg2], ...])
         retries (int, optional): number of retries for each function. Useful for scraping & other functions that may occasionally fail Defaults to 1.
         n_threads (int, optional): number of threads to use. Defaults to 5.
         verbose (bool, optional): verbosity of the function. true = printout, false = silent. Defaults to False.
@@ -66,25 +73,31 @@ def process_parallel(func: callable, arguments: list[list], timeout: float | Non
     Returns:
         tuple[list[list], list]: _description_
     """
-
+   
     assert isinstance(func, Callable), "Func must be a function"
-    assert isinstance(arguments, list), "Arguments must be a list"
-    for argument in arguments:
-        assert isinstance(argument, list), "Each passed set of arguments should be a list"
+    assert isinstance(args, list), "args must be a list"
+    for argument in args:
+        assert isinstance(argument, list), "Each passed set of args should be a list"
+    if kwargs is not None:
+        for kwarg in kwargs:
+            assert isinstance(kwarg, Dict)
+    else:
+        kwargs = [None] * len(args)
+
 
     indices = list(
-        np.arange(len(arguments))
+        np.arange(len(args))
     )  # indeces are needed to keep track of which order things should be returned in
-    idx_args = [(idx, arg) for idx, arg in zip(indices, arguments)]
+    idx_args = [(idx, arg, kwarg) for idx, arg, kwarg in zip(indices, args, kwargs)]
     threads_list = []  # list to store the different threads
     que = queue.Queue()  # queure from which the threads take their data
 
     # creates desired number of threads
     for _ in range(n_threads):
         threads_list.append(
-            Thread(target=lambda q, arg1, arg2, arg3: q.put(
+            Thread(target=lambda q, arg1, arg2, arg3, arg4: q.put(
                 _process_function(func, idx_args, verbose, timeout, retries)),
-                   args=(que, indices, func, arguments)))
+                   args=(que, indices, func, args, kwargs)))
         threads_list[-1].start()
 
     # waits until all data is processed
@@ -115,13 +128,19 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
     results = []
     while len(idx_args) > 0:
         with lock:
-            idx, argument = idx_args.pop(-1)
+            idx, argument, kwarg = idx_args.pop(-1)
         try:
             if timeout is None:
-                result = func(*argument)
+                if kwarg is not None:
+                    result = func(*argument, **kwarg)
+                else:
+                    result = func(*argument)
             else:
                 try:
-                    result = func_timeout(timeout, func, args = argument)
+                    if kwarg is not None:
+                        result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                    else:
+                        result = func_timeout(timeout, func, args = argument)
                 except Exception as e:
                     print(f"The function call for args {argument} has exited with error {e}")
                     raise e
@@ -141,7 +160,7 @@ def _process_first_function(func: callable, idx_args: list[tuple], verbose: bool
         # print("Returning results")
         return results
 
-def process_first(func: callable, arguments: list[list] | list[dict], retries: int = 5, 
+def process_first(func: callable, args: list[list], kwargs: list[dict] | list[None] | None = None, retries: int = 5, 
                   n_threads: int = 5, verbose: bool = False, timeout: float|None = None):
     """This function creates numtiple (n_thread) threads and waits for the first one that
     returns a result, then returns said result. Currently the other threads will still continue 
@@ -152,7 +171,7 @@ def process_first(func: callable, arguments: list[list] | list[dict], retries: i
 
     Args:
         func (callable): function that should be executed in the thread
-        arguments (list[list  |  dict]): arguments to the function that should be executed
+        args (list[list  |  dict]): args to the function that should be executed
         retries (int, optional): number of retries for each function (useful for e.g. scraping). Defaults to 5.
         n_threads (int, optional): number of threads to run. the function calls will automatically be optimally distributed across them. Defaults to 5.
         verbose (bool, optional): verbosity of the function, true = printout, false = silent. Defaults to False.
@@ -160,10 +179,14 @@ def process_first(func: callable, arguments: list[list] | list[dict], retries: i
     Returns:
         _type_: _description_
     """    
+    if kwargs == None:
+        kwargs = [None] * len(args)
+
+    
     indices = list(
-        np.arange(len(arguments))
+        np.arange(len(args))
     )  # indices are needed to keep track of which order things should be returned in
-    idx_args = [(idx, arg) for idx, arg in zip(indices, arguments)]
+    idx_args = [(idx, arg, kwarg) for idx, arg, kwarg in zip(indices, args, kwargs)]
     # print(f"idx args are: {idx_args}")
     threads_list = []  # list to store the different threads
     que = queue.Queue()  # queure from which the threads take their data
@@ -173,17 +196,17 @@ def process_first(func: callable, arguments: list[list] | list[dict], retries: i
     for _ in range(n_threads):
         threads_list.append(
             Thread(
-                target=lambda q, arg1, arg2, arg3: q.put(
+                target=lambda q, arg1, arg2, arg3, arg4: q.put(
                     _process_first_function(func, idx_args, verbose, timeout)
                 ),
-                args=(que, indices, func, arguments),
+                args=(que, indices, func, args, kwargs),
             )
         )
         threads_list[-1].start()
 
     # check if there are already results
     while True:
-        if len(res) == len(arguments):
+        if len(res) == len(args):
             break
         # print(len(res))
         if len(res) > 0:
@@ -207,13 +230,19 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
     # as long as we have function calls remaining
     while len(idx_args_funcs) > 0:
         with lock:
-            idx, argument, func = idx_args_funcs.pop(-1)
+            idx, argument, kwarg, func = idx_args_funcs.pop(-1)
         try:
             if timeout is None:
-                result = func(*argument) # get result of function call)
+                if kwarg is not None:
+                    result = func(*argument, **kwarg)
+                else:
+                    result = func(*argument)
             else:
                 try:
-                    result = func_timeout(timeout, func, argument)
+                    if kwarg is not None:
+                        result = func_timeout(timeout, func, args = argument, kwargs=kwarg)
+                    else:
+                        result = func_timeout(timeout, func, args = argument)
                 except Exception as e:
                     print(f"The function call for args {argument} has exited with error {e}")
                     raise e
@@ -232,16 +261,17 @@ def _process_multi_func(idx_args_funcs: list, verbose: bool, timeout: int | None
         return results
 
 
-def process_parallel_multifunc(funcs: list[callable], arguments: list[list], timeout: float | None = None, 
-                     retries: int = 1, n_threads: int = 5, verbose=False) -> tuple[list[list], list]:
+def process_parallel_multifunc(funcs: list[callable], args: list[list], kwargs: list[dict] | list[None] | None = None, 
+                               timeout: float | None = None, retries: int = 1, n_threads: int = 5, 
+                               verbose=False) -> tuple[list[list], list]:
     """ This function created multiple (n_thread) threads and processes them in parallel. It
-    takes in a list of functions & a list of arguments and distributes the function calls (with the respective
-    arguments) across those threads. Especially useful when dealing with e.g. scraping where you might 
+    takes in a list of functions & a list of args and distributes the function calls (with the respective
+    args) across those threads. Especially useful when dealing with e.g. scraping where you might 
     have a limit on the number of threads that can be run in parallel.
 
     Args:
         funcs (list[executable]): list of functions used for processing
-        arguments (list[list]): list of arguments that should be passed to the function ([[arg1, arg2], [arg1, arg2], ...])
+        args (list[list]): list of args that should be passed to the function ([[arg1, arg2], [arg1, arg2], ...])
         retries (int, optional): number of retries for each function. Useful for scraping & other functions that may occasionally fail Defaults to 1.
         n_threads (int, optional): number of threads to use. Defaults to 5.
         verbose (bool, optional): verbosity of the function. true = printout, false = silent. Defaults to False.
@@ -249,20 +279,22 @@ def process_parallel_multifunc(funcs: list[callable], arguments: list[list], tim
     Returns:
         tuple[list[list], list]: _description_
     """
+    if kwargs == None:
+        kwargs = [None] * len(args)
 
     indices = list(
-        np.arange(len(arguments))
+        np.arange(len(args))
     )  # indeces are needed to keep track of which order things should be returned in
-    idx_args_funcs = [(idx, arg, func) for idx, arg, func in zip(indices, arguments, funcs)]
+    idx_args_funcs = [(idx, arg, kwarg, func) for idx, arg, kwarg, func in zip(indices, args, kwargs, funcs)]
     threads_list = []  # list to store the different threads
     que = queue.Queue()  # queure from which the threads take their data
 
     # creates desired number of threads
     for _ in range(n_threads):
         threads_list.append(
-            Thread(target=lambda q, arg1, arg2: q.put(
+            Thread(target=lambda q, arg1, arg2, arg3: q.put(
                 _process_multi_func(idx_args_funcs, verbose, timeout, retries)),
-                   args=(que, indices, arguments)))
+                   args=(que, indices, args, kwargs)))
         threads_list[-1].start()
 
     # waits until all data is processed
