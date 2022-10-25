@@ -18,4 +18,8 @@ class Parallelizer:
                 all_funcs.append(func)
                 all_args.append(arg)
         
-        return process_parallel_multifunc(all_funcs, all_args)
+        res = process_parallel_multifunc(all_funcs, all_args)
+        
+        for func, args in self.functions:
+            for arg in args:
+                pass
