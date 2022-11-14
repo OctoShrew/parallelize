@@ -1,2 +1,2 @@
-func_timeout==4.3.5
-numpy==1.23.3
+func_timeout>=4.3.5
+numpy>=1.23.3
