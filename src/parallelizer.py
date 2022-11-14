@@ -4,7 +4,7 @@ from pydantic import BaseModel
 try:
     from process_parallel import *
 except:
-    from src.process_parallel import *
+    from .process_parallel import *
 
 from typing import Optional
 
