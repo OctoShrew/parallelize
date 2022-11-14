@@ -10,7 +10,7 @@ setup(
    author='OctoShrew Ltd.',
    author_email='felix.quinque@octoshrew.com',
    packages=['parallelize'],
-   package_dir={'parallelize': 'src'}
+   package_dir={'parallelize': 'src'},
    url='https://github.com/OctoShrew/parellelize',
    license='LICENSE',
    description='An easy to use parallelization library',
